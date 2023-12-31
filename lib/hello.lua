@@ -5,4 +5,5 @@ sys = {
 }
 
 __init_sys__()
-print(sys.argv[3])
+print(sys.argv[1])
+print(sys.uptime())

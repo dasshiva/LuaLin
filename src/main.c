@@ -1,12 +1,7 @@
-/*
-* min.c
-* a minimal Lua interpreter. loads stdin only.
-* no standard library, only a "print" function.
-*/
-
 #include <stdio.h>
 #include <stdlib.h>
 #include "lua.h"
+#include <time.h>
 
 /* a simple "print". based on the code in lbaselib.c */
 static int print(lua_State *L)
@@ -25,17 +20,21 @@ static int print(lua_State *L)
  return 0;
 }
 
-static int donothing(lua_State *L) {
-	printf("Hehe");
-	lua_error(L, "\nFailure");
-	return 0;
-}
-
 static char** args;
 static int argn;
 
+time_t basetime;
+
+static int uptime(lua_State* L) {
+	printf("Time = %lu - %lu \n", time(NULL), basetime);
+	lua_pushnumber(L, time(NULL) - basetime);
+	return 1;
+}
+
 static int init(lua_State *L) {
 	lua_getglobal(L, "sys"); // table 1 
+	
+	// initialise sys.argv
 	lua_pushstring(L, "argv");
 	lua_gettable(L, -2); // table 2
         for (int i = 0; i <= argn; i++) {
@@ -45,6 +44,13 @@ static int init(lua_State *L) {
         }
 	lua_pushstring(L, "argv");
 	lua_insert(L, -2);
+	lua_settable(L, -3);
+	lua_setglobal(L, "sys");
+
+	lua_getglobal(L, "sys");
+	// initialise sys.uptime
+	lua_pushstring(L, "uptime");
+	lua_pushcfunction(L, uptime);
 	lua_settable(L, -3);
 	lua_setglobal(L, "sys");
 	return 0;
@@ -67,6 +73,7 @@ int main(int argc, const char** argv)
 {
  args = argv;
  argn = argc;
+ basetime = time(NULL);
  lua_State *L = lua_open(0);
  lua_register(L,"print",print);
  lua_register(L,"__init_sys__", init);
